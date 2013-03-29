@@ -1,0 +1,38 @@
+#!/usr/bin/env ruby
+
+require 'blurrily'
+require 'optparse'
+require 'ostruct'
+require 'csv'
+
+options = OpenStruct.new
+
+# Defaults
+options.directory  = '.'
+
+parser = OptionParser.new do |opts|
+  opts.banner = "Usage: blurrily-import [options] <file>"
+
+  opts.on("-d", "--directory <DIRECTORY>", "Work in DIRECTORY, defaults to .") do |directory|
+    options.directory = directory
+  end
+
+  opts.on_tail("-h", "--help", "Show this message") do
+    puts opts
+    exit
+  end
+end
+
+parser.parse!(ARGV)
+
+
+map_group = Blurrily::MapGroup.new(options.directory)
+map = map_group.map('locations')
+File.open(ARGV.first, 'r') do |file|
+  file.each_line do |line|
+    reference, needle = CSV.parse_line(line)
+    puts "#{reference}: #{needle}"
+    map.put(needle, reference.to_i)
+  end
+end
+map_group.save
